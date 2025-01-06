@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Launch Unifi Works</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Optional: Configure Tailwind (if needed) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 0 133 124
+                        primary: '#00857C', // Tailwind's teal-500
+                        // hover
+                        // 0 133 124
+                        primaryHover: '#00857C', // Tailwind's teal-600            
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Styles */
+        body {
+            background-image: url('https://platform.unifi.works/RH/Content/WRITEBACK.jpg');
+            background-size: contain; /* Ensures the entire image is visible */
+            background-position: center; /* Centers the image */
+            background-repeat: no-repeat; /* Prevents the image from repeating */
+            height: 100vh; /* Ensures the body takes the full viewport height */
+            margin: 0; /* Removes default margin */
+            background-color: #f3f4f6; /* Fallback color matching Tailwind's gray-100 */
+        }
+
+        /* Overlay Styling */
+        .overlay {
+            background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent white */
+            backdrop-filter: blur(2px); /* Subtle blur effect */
+        }
+
+        /* Container Maximum Width */
+        .container {
+            max-width: 32rem; /* Tailwind's max-w-md */
+            width: 100%;
+        }
+
+        /* Responsive Container Adjustments */
+        @media (min-width: 768px) { /* Tailwind's md breakpoint */
+            .container {
+                max-width: 40rem; /* Tailwind's max-w-lg */
+            }
+        }
+
+        @media (min-width: 1280px) { /* Tailwind's xl breakpoint */
+            .container {
+                max-width: 48rem; /* Tailwind's max-w-xl */
+            }
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="bg-white shadow-lg rounded-lg p-6 container overlay flex flex-col items-center" style="position: fixed; bottom: 15%;">
+        <!-- Removed the Unifi Logo Image -->
+        <!--
+        <img src="https://unifiappserv007.azurewebsites.net/Account/GetLogoImage?v=32-20241008065451-32"
+            alt="Unifi Logo" class="w-24 mx-auto mb-6">
+        -->            
+
+        <!-- Updated Button Text -->
+        <a id="launchApp" href="#" target="_blank"
+            class="inline-block text-center bg-primary text-white font-semibold text-sm py-1.5 px-2.5 rounded opacity-50 pointer-events-none transition-colors duration-300 hover:bg-black">
+            Click to Capture <span class="text-xs ml-1">→</span>
+        </a>
+
+        <!-- Spinner and Message -->
+        <div id="spinnerContainer" class="flex items-center justify-center mt-4">
+            <!-- Spinner SVG -->
+            <svg class="animate-spin h-4 w-4 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span class="text-gray-500 text-sm">Initiating session...</span>
+        </div>
+    </div>
+</body>
+
+<!-- JavaScript to Handle Incoming Messages -->
+<script>
+    // Function to show spinner and message
+    function showSpinner() {
+        const spinner = document.getElementById('spinnerContainer');
+        if (spinner) {
+            spinner.style.display = 'flex';
+        }
+    }
+
+    // Function to hide spinner and message
+    function hideSpinner() {
+        const spinner = document.getElementById('spinnerContainer');
+        if (spinner) {
+            spinner.style.display = 'none';
+        }
+    }
+
+    // Initially show the spinner
+    document.addEventListener('DOMContentLoaded', function () {
+        showSpinner();
+    });
+
+    // Listen for messages from the parent window
+    window.addEventListener('message', function (event) {
+        console.log('Message received:', event);
+
+        const allowedOrigins = ['https://platform.unifi.works', 'https://unifiappserv007.azurewebsites.net']; // Parent origin
+        if (!allowedOrigins.includes(event.origin)) {
+            console.warn('Origin not allowed:', event.origin);
+            return;
+        }
+
+        const data = event.data;
+        console.log('Received data:', data);
+
+        // Parse the data (ensure data.data is a JSON string)
+        let userInfo;
+        try {
+            userInfo = JSON.parse(data.data);
+        } catch (error) {
+            console.error('Failed to parse user info:', error);
+            return;
+        }
+
+        if (userInfo && userInfo.userName) {
+            const encodedUsername = btoa(userInfo.userName);
+            console.log('Base64 Encoded Username:', encodedUsername);
+
+            const launchAppButton = document.getElementById('launchApp');
+            if (launchAppButton) {
+                // Update the href with the encoded username
+                launchAppButton.href = `https://edge.unifi.works/auth/${encodedUsername}`;
+                console.log('Launch Application button href updated to:', launchAppButton.href);
+
+                // Enable the button by removing disabling classes
+                launchAppButton.classList.remove('opacity-50', 'pointer-events-none');
+                // The hover:bg-black class is already present for smooth transition
+
+                // Hide the spinner and message
+                hideSpinner();
+            } else {
+                console.error('Launch Application button not found.');
+            }
+        } else {
+            console.error('User information not found in the data:', data);
+        }
+    });
+</script>
+
+</html>
